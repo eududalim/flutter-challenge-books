@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_challenge_books/app/layers/domain/states/book_states_model.dart';
 import 'package:flutter_challenge_books/app/layers/presenters/view/home/widgets/title_section_widget.dart';
 
 import '../../../../shared/dependency_injection/dependency_injection.dart';
-import '../../controllers/persons_controller.dart';
+import '../../controllers/home_controller.dart';
 import 'widgets/head_title_home_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,7 +17,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  final controller = inject.get<BooksController>();
+  final controller = inject.get<HomeController>();
   late TabController tabController;
 
   @override
@@ -42,9 +45,60 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   children: [
-                    TitleSectionWidget(title: 'Livros favoritos'),
-                    Row(
-                      children: [Container()],
+                    const TitleSectionWidget(title: 'Livros favoritos'),
+                    ValueListenableBuilder(
+                      valueListenable: controller.favoriteBooksState,
+                      builder: (context, state, child) {
+                        if (state is BooksLoadingState) {
+                          return Row(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 700),
+                              ),
+                            ],
+                          );
+                        }
+                        if (state is BooksSuccessState) {
+                          debugPrint(state.data.first.toString());
+                          return Row(
+                              children: state.data
+                                  .map(
+                                    (book) => AspectRatio(
+                                      aspectRatio: 9 / 16,
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 700),
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(20)),
+                                        child: Image.network(book.cover),
+                                        height: 60,
+                                      ),
+                                    ),
+                                  )
+                                  .toList());
+                        }
+
+                        if (state is BookErrorState) {
+                          debugPrint(state.errorMessage);
+                          return Row(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 700),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20)),
+                                height: 100,
+                                child: const AspectRatio(
+                                  aspectRatio: 9 / 16,
+                                  child: Icon(Icons.error),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Container();
+                      },
                     )
                   ],
                 ),
